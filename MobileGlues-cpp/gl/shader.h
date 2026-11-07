@@ -1,3 +1,4 @@
+// Modified by FCL-Team: shader-source API correctness and error handling.
 // MobileGlues - gl/shader.h
 // Copyright (c) 2025-2026 MobileGL-Dev
 // Licensed under the GNU Lesser General Public License v2.1:
@@ -22,6 +23,10 @@ struct shader_t {
 };
 
 extern struct shader_t shaderInfo;
+
+// Separate from MobileGlues' legacy suppressed backend errors: rejected shader
+// submissions must be observable without changing unrelated renderer behavior.
+GLenum mg_take_shader_source_error();
 
 #ifdef __cplusplus
 extern "C"

@@ -1,3 +1,4 @@
+// Modified by FCL-Team: shader-source API correctness and error handling.
 // MobileGlues - egl/context.h
 // Copyright (c) 2025-2026 MobileGL-Dev
 // Licensed under the GNU Lesser General Public License v2.1:
@@ -60,6 +61,10 @@ struct MGContext {
     EGLSurface read;
     int current_count;     // how many threads have this current
     bool destroy_pending;  // eglDestroyContext was called while still current
+    // Strict errors raised by the shader-source boundary. Keep these on the
+    // context, so moving a context to another thread preserves its error and
+    // switching contexts on one thread does not leak it into an unrelated one.
+    GLenum shader_source_error = GL_NO_ERROR;
 };
 
 // The context current on THIS thread, or nullptr. EGL scopes the current context

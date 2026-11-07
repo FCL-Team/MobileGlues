@@ -1,3 +1,4 @@
+// Modified by FCL-Team: shader-source API correctness and error handling.
 // MobileGlues - gl/getter.cpp
 // Copyright (c) 2025-2026 MobileGL-Dev
 // Licensed under the GNU Lesser General Public License v2.1:
@@ -19,6 +20,7 @@
 #include "mg.h"
 #include "pixel.h"
 #include "random_string_gen.h"
+#include "shader.h"
 #include "../config/settings.h"
 
 #define DEBUG 0
@@ -182,13 +184,21 @@ void glGetIntegerv(GLenum pname, GLint* params) {
 
 GLenum glGetError() {
     LOG()
+    const GLenum shader_error = mg_take_shader_source_error();
+    if (shader_error != GL_NO_ERROR) {
+        // Do not read either pre-existing error channel while returning this
+        // error. In particular, GLES.glGetError() would consume a driver error
+        // unrelated to the rejected shader submission.
+        return global_settings.ignore_error == IgnoreErrorLevel::None ? shader_error : GL_NO_ERROR;
+    }
     // Both are consumed whether or not they get reported: leaving either latched
     // would hand it to a later, unrelated glGetError.
     const GLenum backend = GLES.glGetError();
     const GLenum frontend = g_frontend_error;
     g_frontend_error = GL_NO_ERROR;
 
-    // GL_NO_ERROR, always, in every configuration and whatever ignoreError says.
+    // Preserve the legacy GL_NO_ERROR policy for unrelated frontend/backend
+    // errors. The strict shader-submission channel above is handled separately.
     //
     // Deliberate, and not the same thing as not knowing. This layer emulates
     // enough of desktop GL on top of GLES that a faithfully forwarded error is
